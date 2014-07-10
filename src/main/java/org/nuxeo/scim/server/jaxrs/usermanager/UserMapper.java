@@ -42,7 +42,7 @@ public class UserMapper {
                 "company");
 
         userResource.setDisplayName(fname + " " + lname);
-        userResource.setSingularAttributeValue(SCIMConstants.SCHEMA_URI_CORE, "organization", AttributeValueResolver.STRING_RESOLVER, company);
+        //userResource.setSingularAttributeValue(SCIMConstants.SCHEMA_URI_CORE, "organization", AttributeValueResolver.STRING_RESOLVER, company);
         Collection<Entry<String>> emails = new ArrayList<>();
         emails.add(new Entry<String>(email, "string"));
         userResource.setEmails(emails);
@@ -55,7 +55,7 @@ public class UserMapper {
         DocumentModel newUser = um.getBareUserModel();
         newUser.setProperty(um.getUserSchemaName(), um.getUserIdField(),
                 user.getId());
-        newUser.setProperty(um.getUserSchemaName(), "company",user.getSingularAttributeValue(SCIMConstants.SCHEMA_URI_CORE, "organization", AttributeValueResolver.STRING_RESOLVER));
+        //newUser.setProperty(um.getUserSchemaName(), "company",user.getSingularAttributeValue(SCIMConstants.SCHEMA_URI_CORE, "organization", AttributeValueResolver.STRING_RESOLVER));
         if (user.getEmails().size() > 0) {
             newUser.setProperty(um.getUserSchemaName(), "email",
                     user.getEmails().iterator().next().getValue());

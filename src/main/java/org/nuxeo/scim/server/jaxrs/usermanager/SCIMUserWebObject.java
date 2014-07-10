@@ -16,6 +16,12 @@
  */
 package org.nuxeo.scim.server.jaxrs.usermanager;
 
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -30,7 +36,10 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nuxeo.ecm.core.api.ClientException;
 import org.nuxeo.ecm.core.api.DocumentModel;
+import org.nuxeo.ecm.core.api.DocumentModelList;
 import org.nuxeo.ecm.core.api.NuxeoPrincipal;
+import org.nuxeo.ecm.directory.Session;
+import org.nuxeo.ecm.directory.api.DirectoryService;
 import org.nuxeo.ecm.platform.usermanager.UserManager;
 import org.nuxeo.ecm.webengine.WebException;
 import org.nuxeo.ecm.webengine.model.WebObject;
@@ -39,6 +48,7 @@ import org.nuxeo.ecm.webengine.model.impl.DefaultObject;
 import org.nuxeo.runtime.api.Framework;
 
 import com.unboundid.scim.data.UserResource;
+import com.unboundid.scim.sdk.Resources;
 
 /**
  * Simple Resource class used to expose the SCIM API on Users endpoint
@@ -59,6 +69,7 @@ public class SCIMUserWebObject extends DefaultObject {
     @Override
     protected void initialize(Object... args) {
         um = Framework.getLocalService(UserManager.class);
+        mapper = new UserMapper();
     }
 
     protected UserResource resolveUserRessource(String uid) {
@@ -74,6 +85,78 @@ public class SCIMUserWebObject extends DefaultObject {
         return null;
     }
 
+    @GET
+    @Produces({ MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML + "; qs=0.9" })
+    public Resources<UserResource> getUsers(@Context
+            UriInfo uriInfo) {
+        
+        Map<String, List<String>> params = uriInfo.getQueryParameters();
+        
+        // filter
+        Map<String, Serializable> filter = new HashMap<>(); 
+        List<String> filters = params.get("filter");
+        if (filters!=null && filters.size()>0) {            
+            String[] filterParts = filters.get(0).split(" ");
+            if (filterParts[1].equals("eq")) {
+                String key = filterParts[0];
+                if (key.equals("userName")) {
+                    key = "username";
+                }
+                String value = filterParts[2];
+                if (value.startsWith("\"")) {
+                    value = value.substring(1,value.length()-2);
+                }
+                filter.put(key, value);
+            }            
+        }
+        
+        // sort
+        List<String> sortCol = params.get("sortBy");
+        List<String> sortType = params.get("sortOrder");
+        // XXX mapping
+        Map<String, String> orderBy = new HashMap<>();
+        if (sortCol!=null && sortCol.size()>0) {
+            String order = "asc";
+            if (sortType!=null && sortType.size()>0) {
+                if (sortType.get(0).equalsIgnoreCase("descending")) {
+                    order = "desc";
+                }
+                orderBy.put(sortCol.get(0), order);                
+            }
+        }
+        int startIndex = 1;
+        if (params.get("startIndex")!=null) {
+            startIndex = Integer.parseInt(params.get("startIndex").get(0));
+        }
+        int count = 10;
+        if (params.get("count")!=null) {
+            count = Integer.parseInt(params.get("count").get(0));
+        }
+        
+        try {
+            String directoryName = um.getUserDirectoryName();
+
+            DirectoryService ds = Framework.getLocalService(DirectoryService.class);
+            
+            Session dSession = null;
+            DocumentModelList userModels = null;
+            try {
+                dSession= ds.open(directoryName);           
+                userModels = dSession.query(filter, null, orderBy, true, count, startIndex-1);
+            } finally {
+                dSession.close();
+            }
+            
+            List<UserResource> userResources = new ArrayList<>();
+            for (DocumentModel userModel : userModels) {
+                userResources.add(mapper.getUserResourcefromUserModel(userModel));
+            }            
+            return new Resources<>(userResources, userResources.size(), startIndex);                        
+        } catch (Exception e) {
+            log.error("Error while getting Users", e);        }                
+        return null;
+    }
+    
     @Path("{uid}")
     @GET
     @Produces({ MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON })

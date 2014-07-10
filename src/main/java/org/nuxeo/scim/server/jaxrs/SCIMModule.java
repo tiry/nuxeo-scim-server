@@ -20,6 +20,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.nuxeo.ecm.webengine.app.WebEngineModule;
+import org.nuxeo.scim.server.jaxrs.marshalling.ResourcesWriter;
 import org.nuxeo.scim.server.jaxrs.marshalling.UserResourceWriter;
 
 public class SCIMModule extends WebEngineModule {
@@ -38,6 +39,7 @@ public class SCIMModule extends WebEngineModule {
     public Set<Object> getSingletons() {
         Set<Object> result = new HashSet<Object>();
         result.add(new UserResourceWriter());
+        result.add(new ResourcesWriter());
         return result;
     }
 }
