@@ -41,6 +41,8 @@ import org.nuxeo.ecm.core.api.NuxeoPrincipal;
 import org.nuxeo.ecm.directory.Session;
 import org.nuxeo.ecm.directory.api.DirectoryService;
 import org.nuxeo.ecm.platform.usermanager.UserManager;
+import org.nuxeo.ecm.platform.web.common.vh.VirtualHostHelper;
+import org.nuxeo.ecm.webengine.WebEngine;
 import org.nuxeo.ecm.webengine.WebException;
 import org.nuxeo.ecm.webengine.model.WebObject;
 import org.nuxeo.ecm.webengine.model.exceptions.WebSecurityException;
@@ -66,10 +68,23 @@ public class SCIMUserWebObject extends DefaultObject {
 
     protected UserMapper mapper;
     
+    protected String baseUrl;
+    
     @Override
     protected void initialize(Object... args) {
-        um = Framework.getLocalService(UserManager.class);
-        mapper = new UserMapper();
+        um = Framework.getLocalService(UserManager.class);        
+        // build base url
+        baseUrl = VirtualHostHelper.getBaseURL(WebEngine.getActiveContext().getRequest());
+        while (baseUrl.endsWith("/")) {
+            baseUrl = baseUrl.substring(0, baseUrl.length()-2);
+        }        
+        baseUrl = baseUrl + WebEngine.getActiveContext().getUrlPath();
+        // remove end of url
+        int idx = baseUrl.lastIndexOf("/Users/");
+        if (idx >0) {
+            baseUrl = baseUrl.substring(0, idx+7);
+        }
+        mapper = new UserMapper(baseUrl);
     }
 
     protected UserResource resolveUserRessource(String uid) {
