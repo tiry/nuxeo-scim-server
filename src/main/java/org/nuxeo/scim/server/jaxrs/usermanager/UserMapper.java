@@ -73,14 +73,36 @@ public class UserMapper {
     public DocumentModel createUserModelFromUserResource(UserResource user) throws ClientException {
 
         DocumentModel newUser = um.getBareUserModel();
-        newUser.setProperty(um.getUserSchemaName(), um.getUserIdField(),
-                user.getId());
-        //newUser.setProperty(um.getUserSchemaName(), "company",user.getSingularAttributeValue(SCIMConstants.SCHEMA_URI_CORE, "organization", AttributeValueResolver.STRING_RESOLVER));
-        if (user.getEmails().size() > 0) {
-            newUser.setProperty(um.getUserSchemaName(), "email",
-                    user.getEmails().iterator().next().getValue());
+        
+        String userId = user.getId();
+        if (userId==null || userId.isEmpty()) {
+            userId = user.getUserName();
         }
-    
+        newUser.setProperty(um.getUserSchemaName(), um.getUserIdField(),
+                user.getId());        
+        updateUserModel(newUser, user);    
         return um.createUser(newUser);
     }
+
+
+    public DocumentModel updateUserModelFromUserResource(UserResource user) throws ClientException {
+
+        DocumentModel userModel =  um.getUserModel(user.getId());
+        if (userModel==null) {
+            return null;
+        }
+        updateUserModel(userModel, user);
+        um.updateUser(userModel);    
+        return userModel;
+    }
+    
+    protected void updateUserModel(DocumentModel userModel, UserResource userResouce) throws ClientException {
+        if (userResouce.getEmails().size() > 0) {
+            userModel.setProperty(um.getUserSchemaName(), "email",
+                    userResouce.getEmails().iterator().next().getValue());
+        }
+        // XXX
+
+    }
+
 }

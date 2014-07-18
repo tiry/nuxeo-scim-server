@@ -25,6 +25,7 @@ import java.util.Map;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -242,6 +243,51 @@ public class SCIMUserWebObject extends DefaultObject {
         return null;
     }
 
+    @PUT
+    @Consumes({ MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON })
+    @Produces({ MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON })
+    public UserResource updateUser(@Context
+    UriInfo uriInfo, UserResource user) {
+        try {
+            checkUpdateGuardPreconditions();
+            return doUpdateUser(user);
+        } catch (ClientException e) {
+            throw WebException.wrap(e);
+        }
+    }
+
+    @PUT
+    @Path(".xml")
+    @Consumes({ MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON })
+    @Produces(MediaType.APPLICATION_XML)
+    public UserResource updateUserAsXml(@Context
+    UriInfo uriInfo, UserResource user) {
+        return updateUser(uriInfo, user);
+    }
+
+    @PUT
+    @Path(".json")
+    @Consumes({ MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON })
+    @Produces(MediaType.APPLICATION_JSON)
+    public UserResource updateUserAsJSON(@Context
+    UriInfo uriInfo, UserResource user) {
+        return updateUser(uriInfo, user);
+    }
+
+    protected UserResource doUpdateUser(UserResource user) {
+
+        try {
+            DocumentModel userModel = mapper.updateUserModelFromUserResource(user);
+            if (userModel!=null) {
+                return mapper.getUserResourcefromUserModel(userModel);
+            }
+        } catch (Exception e) {
+            log.error("Unable to create User", e);
+        }
+        return null;
+    }
+
+    
     protected void checkUpdateGuardPreconditions() throws ClientException {
         NuxeoPrincipal principal = (NuxeoPrincipal) getContext().getCoreSession().getPrincipal();
         if (!principal.isAdministrator()) {

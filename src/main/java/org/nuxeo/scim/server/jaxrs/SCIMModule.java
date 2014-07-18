@@ -21,6 +21,8 @@ import java.util.Set;
 
 import org.nuxeo.ecm.webengine.app.WebEngineModule;
 import org.nuxeo.scim.server.jaxrs.marshalling.ResourcesWriter;
+import org.nuxeo.scim.server.jaxrs.marshalling.ServiceProviderConfigWriter;
+import org.nuxeo.scim.server.jaxrs.marshalling.UserResourceReader;
 import org.nuxeo.scim.server.jaxrs.marshalling.UserResourceWriter;
 
 public class SCIMModule extends WebEngineModule {
@@ -40,6 +42,8 @@ public class SCIMModule extends WebEngineModule {
         Set<Object> result = new HashSet<Object>();
         result.add(new UserResourceWriter());
         result.add(new ResourcesWriter());
+        result.add(new UserResourceReader());
+        result.add(new ServiceProviderConfigWriter());
         return result;
     }
 }
