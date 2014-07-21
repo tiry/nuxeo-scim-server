@@ -2,6 +2,7 @@ package org.nuxeo.scim.server.jaxrs.marshalling;
 
 import static com.unboundid.scim.sdk.StaticUtils.toLowerCase;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -10,6 +11,7 @@ import java.util.Map;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
+import org.nuxeo.common.utils.FileUtils;
 
 import com.unboundid.scim.data.BaseResource;
 import com.unboundid.scim.data.ResourceFactory;
@@ -34,13 +36,17 @@ public class NXJsonUnmarshaller extends JsonUnmarshaller {
             throws InvalidResourceException {
         try {
 
+            String json = FileUtils.read(inputStream);
             final JSONObject jsonObject = makeCaseInsensitive(new JSONObject(
-                    new JSONTokener(inputStream)));
+                    new JSONTokener(json)));
 
             final NXJsonParser parser = new NXJsonParser();
             return parser.doUnmarshal(jsonObject, resourceDescriptor,
                     resourceFactory, null);
         } catch (JSONException e) {
+            throw new InvalidResourceException("Error while reading JSON: "
+                    + e.getMessage(), e);
+        } catch (IOException e) {
             throw new InvalidResourceException("Error while reading JSON: "
                     + e.getMessage(), e);
         }

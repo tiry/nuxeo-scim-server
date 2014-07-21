@@ -29,7 +29,6 @@ import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
 
 import org.nuxeo.ecm.webengine.model.WebObject;
@@ -46,9 +45,6 @@ import com.unboundid.scim.data.ServiceProviderConfig;
 import com.unboundid.scim.data.SortConfig;
 import com.unboundid.scim.data.XmlDataFormatConfig;
 import com.unboundid.scim.schema.CoreSchema;
-import com.unboundid.scim.schema.ResourceDescriptor;
-import com.unboundid.scim.wink.SCIMApplication;
-import com.unboundid.scim.wink.ServiceProviderConfigResource;
 
 /**
  * The root entry for the WebEngine module.
@@ -65,6 +61,16 @@ public class SCIMRoot extends ModuleRoot {
         return newObject("users");
     }
 
+    @Path("/Users.json")
+    public Object doGetUsersJsonResource() {
+        return newObject("users", MediaType.APPLICATION_JSON_TYPE);
+    }
+
+    @Path("/Users.xml")
+    public Object doGetUsersXmlResource() {
+        return newObject("users", MediaType.APPLICATION_XML_TYPE);
+    }
+    
     @Path("/Groups")
     public Object doGetGroups() {
         return newObject("groups");

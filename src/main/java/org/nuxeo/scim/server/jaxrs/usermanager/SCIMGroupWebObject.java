@@ -22,7 +22,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -44,9 +43,8 @@ import org.nuxeo.ecm.directory.api.DirectoryService;
 import org.nuxeo.ecm.webengine.WebException;
 import org.nuxeo.ecm.webengine.model.WebObject;
 import org.nuxeo.runtime.api.Framework;
-import org.nuxeo.scim.server.jaxrs.marshalling.UserResourceWithMimeType;
 
-import com.unboundid.scim.data.UserResource;
+import com.unboundid.scim.data.GroupResource;
 import com.unboundid.scim.sdk.Resources;
 
 /**
@@ -55,32 +53,31 @@ import com.unboundid.scim.sdk.Resources;
  * @author tiry
  * 
  */
-@WebObject(type = "users")
+@WebObject(type = "groups")
 @Produces({ MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML })
-public class SCIMUserWebObject extends BaseUMObject {
+public class SCIMGroupWebObject extends BaseUMObject {
+
     
     protected String getPrefix() {
-        return "/Users";
+        return "/Groups";
     }
     
-    protected UserResource resolveUserRessource(String uid) {
+    protected GroupResource resolveGroupRessource(String uid) {
 
         try {
-            DocumentModel userModel = um.getUserModel(uid);
-            if (userModel != null) {
-                return mapper.getUserResourcefromUserModel(userModel);
+            DocumentModel groupModel = um.getGroupModel(uid);
+            if (groupModel != null) {
+                return mapper.getGroupResourceFromGroupModel(groupModel);
             }
         } catch (Exception e) {
             log.error("Error while resolving User", e);
         }
-        
-        
         return null;
     }
 
     @GET
     @Produces({ MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML + "; qs=0.9" })
-    public Resources<UserResource> getUsers(@Context
+    public Resources<GroupResource> getGroups(@Context
             UriInfo uriInfo) {
         
         Map<String, List<String>> params = uriInfo.getQueryParameters();
@@ -127,69 +124,69 @@ public class SCIMUserWebObject extends BaseUMObject {
         }
         
         try {
-            String directoryName = um.getUserDirectoryName();
+            String directoryName = um.getGroupDirectoryName();
 
             DirectoryService ds = Framework.getLocalService(DirectoryService.class);
             
             Session dSession = null;
-            DocumentModelList userModels = null;
+            DocumentModelList groupModels = null;
             try {
                 dSession= ds.open(directoryName);           
-                userModels = dSession.query(filter, null, orderBy, true, count, startIndex-1);
+                groupModels = dSession.query(filter, null, orderBy, true, count, startIndex-1);
             } finally {
                 dSession.close();
             }
             
-            List<UserResource> userResources = new ArrayList<>();
-            for (DocumentModel userModel : userModels) {
-                userResources.add(mapper.getUserResourcefromUserModel(userModel));
+            List<GroupResource> groupResources = new ArrayList<>();
+            for (DocumentModel groupModel : groupModels) {
+                groupResources.add(mapper.getGroupResourceFromGroupModel(groupModel));
             }            
-            return new Resources<>(userResources, userResources.size(), startIndex);                        
+            return new Resources<>(groupResources, groupResources.size(), startIndex);                        
         } catch (Exception e) {
-            log.error("Error while getting Users", e);        }                
+            log.error("Error while getting Groups", e);        }                
         return null;
     }
     
     @Path("{uid}")
     @GET
     @Produces({ MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON })
-    public UserResource getUserResource(@Context
+    public GroupResource getGroupResource(@Context
     UriInfo uriInfo, @PathParam("uid")
     String uid) {
-        return resolveUserRessource(uid);
+        return resolveGroupRessource(uid);
 
     }
 
     @Path("{uid}.xml")
     @GET
     @Produces(MediaType.APPLICATION_XML)
-    public UserResource getUserResourceAsXml(@Context
+    public GroupResource getGroupResourceAsXml(@Context
     UriInfo uriInfo, @PathParam("uid")
     String uid) {
-        return getUserResource(uriInfo, uid);
+        return getGroupResource(uriInfo, uid);
     }
 
     @Path("{uid}.json")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public UserResource getUserResourceAsJSON(@Context
+    public GroupResource getUserResourceAsJSON(@Context
     UriInfo uriInfo, @PathParam("uid")
     String uid) {
-        return getUserResource(uriInfo, uid);
+        return getGroupResource(uriInfo, uid);
     }
 
     @POST
     @Consumes({ MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON })
-    public UserResource createUser(@Context
-    UriInfo uriInfo, UserResource user, @Context final HttpServletResponse response) {
+    public GroupResource createGroup(@Context
+    UriInfo uriInfo, GroupResource group, @Context final HttpServletResponse response) {
         try {
             checkUpdateGuardPreconditions();
             response.setStatus(Response.Status.CREATED.getStatusCode());
             try {
                 response.flushBuffer();
             }catch(Exception e){}            
-            return doCreateUser(user);
+            return doCreateGroup(group);
         } catch (ClientException e) {
             throw WebException.wrap(e);
         }
@@ -199,50 +196,28 @@ public class SCIMUserWebObject extends BaseUMObject {
     @Path(".xml")
     @Consumes({ MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON })
     @Produces(MediaType.APPLICATION_XML)
-    public UserResource createUserAsXml(@Context
-    UriInfo uriInfo, UserResource user,  @Context final HttpServletResponse response) {
-        response.setContentType(MediaType.APPLICATION_XML);
-        UserResource userResource =  createUser(uriInfo, user, response);                
-        return userResource;
+    public GroupResource createGroupAsXml(@Context
+    UriInfo uriInfo, GroupResource group, @Context final HttpServletResponse response) {
+        return createGroup(uriInfo, group, response);
     }
 
     @POST
     @Path(".json")
     @Consumes({ MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON })
     @Produces(MediaType.APPLICATION_JSON)
-    public UserResource createUserAsJSON(@Context
-    UriInfo uriInfo, UserResource user,  @Context final HttpServletResponse response) {
-        response.setContentType(MediaType.APPLICATION_JSON);
-        UserResource userResource =  createUser(uriInfo, user, response);        
-        return userResource;
-    }
-
-    protected UserResource doCreateUser(UserResource user) {
-
-        try {
-            DocumentModel newUser = mapper.createUserModelFromUserResource(user);
-            UserResource resource =  mapper.getUserResourcefromUserModel(newUser);
-            
-            if (fixeMediaType!=null) {
-                return new UserResourceWithMimeType(resource, fixeMediaType);     
-            } else {
-                return resource;
-            }
-
-        } catch (Exception e) {
-            log.error("Unable to create User", e);
-        }
-        return null;
+    public GroupResource createGroupAsJSON(@Context
+    UriInfo uriInfo, GroupResource group, @Context final HttpServletResponse response) {
+        return createGroup(uriInfo, group, response);
     }
 
     @PUT
     @Consumes({ MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON })
-    public UserResource updateUser(@Context
-    UriInfo uriInfo, UserResource user) {
+    public GroupResource updateGroup(@Context
+    UriInfo uriInfo, GroupResource user) {
         try {
             checkUpdateGuardPreconditions();
-            return doUpdateUser(user);
+            return doUpdateGroup(user);
         } catch (ClientException e) {
             throw WebException.wrap(e);
         }
@@ -252,31 +227,43 @@ public class SCIMUserWebObject extends BaseUMObject {
     @Path(".xml")
     @Consumes({ MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON })
     @Produces(MediaType.APPLICATION_XML)
-    public UserResource updateUserAsXml(@Context
-    UriInfo uriInfo, UserResource user) {
-        return updateUser(uriInfo, user);
+    public GroupResource updateUserAsXml(@Context
+    UriInfo uriInfo, GroupResource group) {
+        return updateGroup(uriInfo, group);
     }
 
     @PUT
     @Path(".json")
     @Consumes({ MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON })
     @Produces(MediaType.APPLICATION_JSON)
-    public UserResource updateUserAsJSON(@Context
-    UriInfo uriInfo, UserResource user) {
-        return updateUser(uriInfo, user);
+    public GroupResource updateUserAsJSON(@Context
+    UriInfo uriInfo, GroupResource group) {
+        return updateGroup(uriInfo, group);
     }
 
-    protected UserResource doUpdateUser(UserResource user) {
+    protected GroupResource doUpdateGroup(GroupResource group) {
 
         try {
-            DocumentModel userModel = mapper.updateUserModelFromUserResource(user);
-            if (userModel!=null) {
-                return mapper.getUserResourcefromUserModel(userModel);
+            DocumentModel groupModel = mapper.updateGroupModelFromGroupResource(group);
+            if (groupModel!=null) {
+                return mapper.getGroupResourcefromGroupModel(groupModel);
             }
         } catch (Exception e) {
-            log.error("Unable to create User", e);
+            log.error("Unable to update Group", e);
         }
         return null;
     }
+
+    protected GroupResource doCreateGroup(GroupResource group) {
+
+        try {
+            DocumentModel newGroup = mapper.createGroupModelFromGroupResource(group);
+            return mapper.getGroupResourcefromGroupModel(newGroup);
+        } catch (Exception e) {
+            log.error("Unable to create Group", e);
+        }
+        return null;
+    }
+
 
 }

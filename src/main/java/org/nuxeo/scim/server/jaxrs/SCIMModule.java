@@ -20,6 +20,8 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.nuxeo.ecm.webengine.app.WebEngineModule;
+import org.nuxeo.scim.server.jaxrs.marshalling.GroupResourceReader;
+import org.nuxeo.scim.server.jaxrs.marshalling.GroupResourceWriter;
 import org.nuxeo.scim.server.jaxrs.marshalling.ResourcesWriter;
 import org.nuxeo.scim.server.jaxrs.marshalling.ServiceProviderConfigWriter;
 import org.nuxeo.scim.server.jaxrs.marshalling.UserResourceReader;
@@ -43,6 +45,8 @@ public class SCIMModule extends WebEngineModule {
         result.add(new UserResourceWriter());
         result.add(new ResourcesWriter());
         result.add(new UserResourceReader());
+        result.add(new GroupResourceReader());
+        result.add(new GroupResourceWriter());
         result.add(new ServiceProviderConfigWriter());
         return result;
     }
