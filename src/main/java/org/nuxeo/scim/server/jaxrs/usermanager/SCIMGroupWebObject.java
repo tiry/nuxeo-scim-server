@@ -43,6 +43,7 @@ import org.nuxeo.ecm.directory.api.DirectoryService;
 import org.nuxeo.ecm.webengine.WebException;
 import org.nuxeo.ecm.webengine.model.WebObject;
 import org.nuxeo.runtime.api.Framework;
+import org.nuxeo.scim.server.jaxrs.marshalling.GroupResponse;
 
 import com.unboundid.scim.data.GroupResource;
 import com.unboundid.scim.sdk.Resources;
@@ -178,20 +179,17 @@ public class SCIMGroupWebObject extends BaseUMObject {
     @POST
     @Consumes({ MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON })
-    public GroupResource createGroup(@Context
+    public Response createGroup(@Context
     UriInfo uriInfo, GroupResource group, @Context final HttpServletResponse response) {
         try {
-            checkUpdateGuardPreconditions();
-            response.setStatus(Response.Status.CREATED.getStatusCode());
-            try {
-                response.flushBuffer();
-            }catch(Exception e){}            
-            return doCreateGroup(group);
+            checkUpdateGuardPreconditions();                   
+            return doCreateGroup(group, fixeMediaType);
         } catch (ClientException e) {
             throw WebException.wrap(e);
         }
     }
 
+    /*
     @POST
     @Path(".xml")
     @Consumes({ MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON })
@@ -208,21 +206,22 @@ public class SCIMGroupWebObject extends BaseUMObject {
     public GroupResource createGroupAsJSON(@Context
     UriInfo uriInfo, GroupResource group, @Context final HttpServletResponse response) {
         return createGroup(uriInfo, group, response);
-    }
+    }*/
 
     @PUT
     @Consumes({ MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON })
-    public GroupResource updateGroup(@Context
+    public Response updateGroup(@Context
     UriInfo uriInfo, GroupResource user) {
         try {
             checkUpdateGuardPreconditions();
-            return doUpdateGroup(user);
+            return doUpdateGroup(user, fixeMediaType);
         } catch (ClientException e) {
             throw WebException.wrap(e);
         }
     }
 
+    /*
     @PUT
     @Path(".xml")
     @Consumes({ MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON })
@@ -239,14 +238,15 @@ public class SCIMGroupWebObject extends BaseUMObject {
     public GroupResource updateUserAsJSON(@Context
     UriInfo uriInfo, GroupResource group) {
         return updateGroup(uriInfo, group);
-    }
+    }*/
 
-    protected GroupResource doUpdateGroup(GroupResource group) {
+    protected Response doUpdateGroup(GroupResource group, MediaType mt) {
 
         try {
             DocumentModel groupModel = mapper.updateGroupModelFromGroupResource(group);
             if (groupModel!=null) {
-                return mapper.getGroupResourcefromGroupModel(groupModel);
+                GroupResource groupResource =  mapper.getGroupResourcefromGroupModel(groupModel);
+                return GroupResponse.updated(groupResource, mt);
             }
         } catch (Exception e) {
             log.error("Unable to update Group", e);
@@ -254,11 +254,12 @@ public class SCIMGroupWebObject extends BaseUMObject {
         return null;
     }
 
-    protected GroupResource doCreateGroup(GroupResource group) {
+    protected Response doCreateGroup(GroupResource group, MediaType mt) {
 
         try {
             DocumentModel newGroup = mapper.createGroupModelFromGroupResource(group);
-            return mapper.getGroupResourcefromGroupModel(newGroup);
+            GroupResource groupResource = mapper.getGroupResourcefromGroupModel(newGroup);
+            return GroupResponse.created(groupResource, mt);
         } catch (Exception e) {
             log.error("Unable to create Group", e);
         }

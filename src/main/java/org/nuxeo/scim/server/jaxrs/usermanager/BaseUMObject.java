@@ -20,7 +20,8 @@ public abstract class BaseUMObject extends DefaultObject {
     protected UserMapper mapper;
     protected String baseUrl;
 
-    protected MediaType fixeMediaType = null;
+    // default to JSON
+    protected MediaType fixeMediaType = MediaType.APPLICATION_JSON_TYPE;
     
     public BaseUMObject() {
         super();

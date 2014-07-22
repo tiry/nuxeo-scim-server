@@ -56,8 +56,10 @@ public class UserMapper {
         String displayName = fname + " " + lname;
         userResource.setDisplayName(displayName);
         Collection<Entry<String>> emails = new ArrayList<>();
-        emails.add(new Entry<String>(email, "string"));
-        userResource.setEmails(emails);
+        if (email!=null) {
+            emails.add(new Entry<String>(email, "string"));
+            userResource.setEmails(emails);
+        }
 
         Name fullName = new Name(displayName, lname, "", fname, "", "");
         userResource.setSingularAttributeValue(SCIMConstants.SCHEMA_URI_CORE,
@@ -126,7 +128,7 @@ public class UserMapper {
                 groupId = group.getDisplayName();
             }
             newGroup.setProperty(um.getGroupSchemaName(), um.getGroupIdField(),
-                    groupId);
+                    groupId);            
             updateGroupModel(newGroup, group);
             return um.createGroup(newGroup);
         } else {
@@ -168,6 +170,9 @@ public class UserMapper {
         groupResource.setId(groupId);
         groupResource.setExternalId(groupId);
 
+        URI location = new URI(baseUrl + "/" + groupId);
+        Meta meta = new Meta(null, null, location, null);
+        groupResource.setMeta(meta);
         // XXX
 
         return groupResource;

@@ -22,8 +22,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -44,7 +42,7 @@ import org.nuxeo.ecm.directory.api.DirectoryService;
 import org.nuxeo.ecm.webengine.WebException;
 import org.nuxeo.ecm.webengine.model.WebObject;
 import org.nuxeo.runtime.api.Framework;
-import org.nuxeo.scim.server.jaxrs.marshalling.UserResourceWithMimeType;
+import org.nuxeo.scim.server.jaxrs.marshalling.UserResponse;
 
 import com.unboundid.scim.data.UserResource;
 import com.unboundid.scim.sdk.Resources;
@@ -181,54 +179,44 @@ public class SCIMUserWebObject extends BaseUMObject {
     @POST
     @Consumes({ MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON })
-    public UserResource createUser(@Context
-    UriInfo uriInfo, UserResource user, @Context final HttpServletResponse response) {
-        try {
-            checkUpdateGuardPreconditions();
-            response.setStatus(Response.Status.CREATED.getStatusCode());
-            try {
-                response.flushBuffer();
-            }catch(Exception e){}            
-            return doCreateUser(user);
-        } catch (ClientException e) {
-            throw WebException.wrap(e);
-        }
+    public Response createUser(UserResource user) {
+        return doCreateUserResponse(user, fixeMediaType);
     }
 
+    /*
     @POST
     @Path(".xml")
     @Consumes({ MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON })
     @Produces(MediaType.APPLICATION_XML)
-    public UserResource createUserAsXml(@Context
-    UriInfo uriInfo, UserResource user,  @Context final HttpServletResponse response) {
-        response.setContentType(MediaType.APPLICATION_XML);
-        UserResource userResource =  createUser(uriInfo, user, response);                
-        return userResource;
+    public Response createUserAsXml(UserResource user) {
+        return doCreateUserResponse(user, MediaType.APPLICATION_XML_TYPE);                
     }
 
     @POST
     @Path(".json")
     @Consumes({ MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON })
     @Produces(MediaType.APPLICATION_JSON)
-    public UserResource createUserAsJSON(@Context
-    UriInfo uriInfo, UserResource user,  @Context final HttpServletResponse response) {
-        response.setContentType(MediaType.APPLICATION_JSON);
-        UserResource userResource =  createUser(uriInfo, user, response);        
-        return userResource;
-    }
+    public Response createUserAsJSON(UserResource user) {        
+        return doCreateUserResponse(user, MediaType.APPLICATION_JSON_TYPE);
+    }*/
 
+    
+    protected Response doCreateUserResponse(UserResource user, MediaType mt) {
+        try {
+            checkUpdateGuardPreconditions();
+            return UserResponse.created(doCreateUser(user), mt);
+        } catch (ClientException e) {
+            throw WebException.wrap(e);
+        }
+
+    }
+    
     protected UserResource doCreateUser(UserResource user) {
 
         try {
             DocumentModel newUser = mapper.createUserModelFromUserResource(user);
-            UserResource resource =  mapper.getUserResourcefromUserModel(newUser);
-            
-            if (fixeMediaType!=null) {
-                return new UserResourceWithMimeType(resource, fixeMediaType);     
-            } else {
-                return resource;
-            }
-
+            UserResource resource =  mapper.getUserResourcefromUserModel(newUser);            
+            return resource;
         } catch (Exception e) {
             log.error("Unable to create User", e);
         }
@@ -238,16 +226,17 @@ public class SCIMUserWebObject extends BaseUMObject {
     @PUT
     @Consumes({ MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON })
-    public UserResource updateUser(@Context
+    public Response updateUser(@Context
     UriInfo uriInfo, UserResource user) {
         try {
             checkUpdateGuardPreconditions();
-            return doUpdateUser(user);
+            return doUpdateUser(user, fixeMediaType);
         } catch (ClientException e) {
             throw WebException.wrap(e);
         }
     }
 
+    /*
     @PUT
     @Path(".xml")
     @Consumes({ MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON })
@@ -264,14 +253,15 @@ public class SCIMUserWebObject extends BaseUMObject {
     public UserResource updateUserAsJSON(@Context
     UriInfo uriInfo, UserResource user) {
         return updateUser(uriInfo, user);
-    }
+    }*/
 
-    protected UserResource doUpdateUser(UserResource user) {
+    protected Response doUpdateUser(UserResource user, MediaType mt) {
 
         try {
             DocumentModel userModel = mapper.updateUserModelFromUserResource(user);
             if (userModel!=null) {
-                return mapper.getUserResourcefromUserModel(userModel);
+                UserResource userResource =  mapper.getUserResourcefromUserModel(userModel);
+                return UserResponse.updated(userResource, mt);
             }
         } catch (Exception e) {
             log.error("Unable to create User", e);
