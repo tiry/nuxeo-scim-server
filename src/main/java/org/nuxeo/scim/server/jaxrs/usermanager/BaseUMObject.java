@@ -21,7 +21,7 @@ public abstract class BaseUMObject extends DefaultObject {
     protected String baseUrl;
 
     // default to JSON
-    protected MediaType fixeMediaType = MediaType.APPLICATION_JSON_TYPE;
+    protected MediaType fixeMediaType = null;
     
     public BaseUMObject() {
         super();
@@ -47,6 +47,14 @@ public abstract class BaseUMObject extends DefaultObject {
         
         if (args!=null && args.length>0) {
             fixeMediaType = (MediaType) args[0];
+        }
+        if (fixeMediaType==null) {
+            String accept = WebEngine.getActiveContext().getRequest().getHeader("Accept");
+            if (accept!=null && accept.toLowerCase().contains("application/xml")) {
+                fixeMediaType = MediaType.APPLICATION_XML_TYPE;
+            } else {
+                fixeMediaType = MediaType.APPLICATION_JSON_TYPE;
+            }
         }
     }
 

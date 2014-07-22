@@ -156,7 +156,7 @@ public class SCIMRoot extends ModuleRoot {
 
         config.setSortConfig(new SortConfig(true));
 
-        config.setXmlDataFormatConfig(new XmlDataFormatConfig(false));
+        config.setXmlDataFormatConfig(new XmlDataFormatConfig(true));
 
         return config;
     }
