@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -32,6 +33,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriInfo;
 
 import org.nuxeo.ecm.core.api.ClientException;
@@ -182,24 +184,6 @@ public class SCIMUserWebObject extends BaseUMObject {
     public Response createUser(UserResource user) {
         return doCreateUserResponse(user, fixeMediaType);
     }
-
-    /*
-    @POST
-    @Path(".xml")
-    @Consumes({ MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON })
-    @Produces(MediaType.APPLICATION_XML)
-    public Response createUserAsXml(UserResource user) {
-        return doCreateUserResponse(user, MediaType.APPLICATION_XML_TYPE);                
-    }
-
-    @POST
-    @Path(".json")
-    @Consumes({ MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON })
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response createUserAsJSON(UserResource user) {        
-        return doCreateUserResponse(user, MediaType.APPLICATION_JSON_TYPE);
-    }*/
-
     
     protected Response doCreateUserResponse(UserResource user, MediaType mt) {
         try {
@@ -224,41 +208,23 @@ public class SCIMUserWebObject extends BaseUMObject {
     }
 
     @PUT
+    @Path("{uid}")
     @Consumes({ MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON })
     public Response updateUser(@Context
-    UriInfo uriInfo, UserResource user) {
+    UriInfo uriInfo, @PathParam("uid") String uid, UserResource user) {
         try {
             checkUpdateGuardPreconditions();
-            return doUpdateUser(user, fixeMediaType);
+            return doUpdateUser(uid, user, fixeMediaType);
         } catch (ClientException e) {
             throw WebException.wrap(e);
         }
     }
 
-    /*
-    @PUT
-    @Path(".xml")
-    @Consumes({ MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON })
-    @Produces(MediaType.APPLICATION_XML)
-    public UserResource updateUserAsXml(@Context
-    UriInfo uriInfo, UserResource user) {
-        return updateUser(uriInfo, user);
-    }
-
-    @PUT
-    @Path(".json")
-    @Consumes({ MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON })
-    @Produces(MediaType.APPLICATION_JSON)
-    public UserResource updateUserAsJSON(@Context
-    UriInfo uriInfo, UserResource user) {
-        return updateUser(uriInfo, user);
-    }*/
-
-    protected Response doUpdateUser(UserResource user, MediaType mt) {
+    protected Response doUpdateUser(String uid, UserResource user, MediaType mt) {
 
         try {
-            DocumentModel userModel = mapper.updateUserModelFromUserResource(user);
+            DocumentModel userModel = mapper.updateUserModelFromUserResource(uid, user);
             if (userModel!=null) {
                 UserResource userResource =  mapper.getUserResourcefromUserModel(userModel);
                 return UserResponse.updated(userResource, mt);
@@ -267,6 +233,20 @@ public class SCIMUserWebObject extends BaseUMObject {
             log.error("Unable to create User", e);
         }
         return null;
+    }
+
+    
+    @Path("{uid}")
+    @DELETE
+    public Response deleteUserResource(@Context
+    UriInfo uriInfo, @PathParam("uid")
+    String uid) {
+        try {
+            um.deleteUser(uid);
+            return Response.ok().build();
+        } catch (ClientException e) {            
+            return Response.status(Status.NOT_FOUND).build();
+        }
     }
 
 }

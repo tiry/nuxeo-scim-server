@@ -31,7 +31,7 @@ import com.google.inject.Inject;
 @RunWith(FeaturesRunner.class)
 @Features({ ScimFeature.class })
 @Jetty(port = 18090)
-@RepositoryConfig(cleanup = Granularity.METHOD, init = ScimServerInit.class)
+@RepositoryConfig(cleanup = Granularity.CLASS, init = ScimServerInit.class)
 public class ScimComplianceTest {
    
     @Inject
@@ -62,8 +62,15 @@ public class ScimComplianceTest {
 
         results.addAll(new PostTest(csp, userCache, groupCache).run());
         
+        // empty tests !
+        //results.addAll(new FilterTest(csp, userCache, groupCache).run());
+        
+        results.addAll(new PutTest(csp, userCache, groupCache).run());
+        
+        results.addAll(new DeleteTest(csp, userCache, groupCache).run());
+        
         /*
-        results.addAll(new FilterTest(csp, userCache, groupCache).run());
+        
         results.addAll(new PutTest(csp, userCache, groupCache).run());
         results.addAll(new SortTest(csp, userCache, groupCache).run());
         results.addAll(new AttributeTest(csp, userCache, groupCache).run());

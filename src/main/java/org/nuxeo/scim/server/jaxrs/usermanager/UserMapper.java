@@ -28,11 +28,32 @@ public class UserMapper {
         um = Framework.getLocalService(UserManager.class);
         this.baseUrl = baseUrl;
     }
+    
+    public GroupResource getGroupResourceFromGroupModel(DocumentModel groupModel)
+            throws Exception {
 
-    public GroupResource getGroupResourceFromGroupModel(DocumentModel groupModel) {
-        return null;
+        GroupResource groupResource = new GroupResource(
+                CoreSchema.GROUP_DESCRIPTOR);
+
+        String groupId = (String) groupModel.getProperty(
+                um.getGroupSchemaName(), um.getGroupIdField());
+
+        String groupLabel = (String) groupModel.getProperty(
+                um.getGroupSchemaName(), um.getGroupLabelField());
+
+        groupResource.setDisplayName(groupLabel);
+        groupResource.setId(groupId);
+        groupResource.setExternalId(groupId);
+
+        URI location = new URI(baseUrl + "/" + groupId);
+        Meta meta = new Meta(null, null, location, "1");
+        groupResource.setMeta(meta);
+        // XXX
+
+        return groupResource;
     }
 
+    
     public UserResource getUserResourcefromUserModel(DocumentModel userModel)
             throws Exception {
 
@@ -54,6 +75,7 @@ public class UserMapper {
                 "company");
 
         String displayName = fname + " " + lname;
+        displayName = displayName.trim();
         userResource.setDisplayName(displayName);
         Collection<Entry<String>> emails = new ArrayList<>();
         if (email!=null) {
@@ -65,7 +87,7 @@ public class UserMapper {
         userResource.setSingularAttributeValue(SCIMConstants.SCHEMA_URI_CORE,
                 "name", Name.NAME_RESOLVER, fullName);
         URI location = new URI(baseUrl + "/" + userId);
-        Meta meta = new Meta(null, null, location, null);
+        Meta meta = new Meta(null, null, location, "1");
         userResource.setMeta(meta);
 
         // manage groups
@@ -91,14 +113,15 @@ public class UserMapper {
             userId = user.getUserName();
         }
         newUser.setProperty(um.getUserSchemaName(), um.getUserIdField(), userId);
+                
         updateUserModel(newUser, user);
         return um.createUser(newUser);
     }
 
-    public DocumentModel updateUserModelFromUserResource(UserResource user)
+    public DocumentModel updateUserModelFromUserResource(String uid, UserResource user)
             throws ClientException {
 
-        DocumentModel userModel = um.getUserModel(user.getId());
+        DocumentModel userModel = um.getUserModel(uid);
         if (userModel == null) {
             return null;
         }
@@ -114,6 +137,22 @@ public class UserMapper {
             userModel.setProperty(um.getUserSchemaName(), "email",
                     userResouce.getEmails().iterator().next().getValue());
         }
+        String displayName = userResouce.getDisplayName();
+        if (displayName!=null && !displayName.isEmpty()) {
+            int idx = displayName.indexOf(" ");
+            if (idx>0) {               
+                userModel.setProperty(um.getUserSchemaName(),
+                        "firstName", displayName.substring(0, idx).trim());
+                userModel.setProperty(um.getUserSchemaName(),
+                        "lastName", displayName.substring(idx+1).trim());
+            } else {
+                userModel.setProperty(um.getUserSchemaName(),
+                        "firstName", displayName);
+                userModel.setProperty(um.getUserSchemaName(),
+                        "lastName", "");
+            }
+        }
+
         // XXX
     }
 
@@ -132,14 +171,14 @@ public class UserMapper {
             updateGroupModel(newGroup, group);
             return um.createGroup(newGroup);
         } else {
-            return updateGroupModelFromGroupResource(group);
+            return updateGroupModelFromGroupResource(group.getId(), group);
         }
     }
 
-    public DocumentModel updateGroupModelFromGroupResource(GroupResource group)
+    public DocumentModel updateGroupModelFromGroupResource(String uid, GroupResource group)
             throws ClientException {
 
-        DocumentModel groupModel = um.getGroupModel(group.getId());
+        DocumentModel groupModel = um.getGroupModel(uid);
         if (groupModel == null) {
             return null;
         }
@@ -149,33 +188,12 @@ public class UserMapper {
     }
 
     protected void updateGroupModel(DocumentModel userModel,
-            GroupResource groupResouce) throws ClientException {
-        // XXX
-
+            GroupResource groupResouce) throws ClientException {        
+        String displayName = groupResouce.getDisplayName();
+        if (displayName!=null && !displayName.isEmpty()) {
+            userModel.setProperty(um.getGroupSchemaName(), um.getGroupLabelField(), displayName);
+        }
     }
 
-    public GroupResource getGroupResourcefromGroupModel(DocumentModel groupModel)
-            throws Exception {
-
-        GroupResource groupResource = new GroupResource(
-                CoreSchema.GROUP_DESCRIPTOR);
-
-        String groupId = (String) groupModel.getProperty(
-                um.getGroupSchemaName(), um.getGroupIdField());
-
-        String groupLabel = (String) groupModel.getProperty(
-                um.getGroupSchemaName(), um.getGroupLabelField());
-
-        groupResource.setDisplayName(groupLabel);
-        groupResource.setId(groupId);
-        groupResource.setExternalId(groupId);
-
-        URI location = new URI(baseUrl + "/" + groupId);
-        Meta meta = new Meta(null, null, location, null);
-        groupResource.setMeta(meta);
-        // XXX
-
-        return groupResource;
-    }
 
 }

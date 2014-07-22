@@ -76,6 +76,16 @@ public class SCIMRoot extends ModuleRoot {
         return newObject("groups");
     }
 
+    @Path("/Groups.json")
+    public Object doGetGroupsAsJson() {
+        return newObject("groups", MediaType.APPLICATION_JSON_TYPE);
+    }
+
+    @Path("/Groups.xml")
+    public Object doGetGroupsAsJXml() {
+        return newObject("groups", MediaType.APPLICATION_XML_TYPE);
+    }
+
     protected Object getSchema(String schemaName, String format) {
 
         String viewName = "user-schema";
