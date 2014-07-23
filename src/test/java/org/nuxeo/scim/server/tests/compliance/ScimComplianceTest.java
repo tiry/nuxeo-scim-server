@@ -40,7 +40,7 @@ public class ScimComplianceTest {
 
     protected static CSP csp = null;
 
-    protected static int textIdx = 0;
+    protected static int testIdx = 0;
 
     protected static ArrayList<TestResult> results;
 
@@ -65,11 +65,12 @@ public class ScimComplianceTest {
     }
 
     protected void verifyTests() {
-        for (int i = textIdx; i < results.size(); i++) {
+        for (int i = testIdx; i < results.size(); i++) {
             ReadableTestResult result = new ReadableTestResult(results.get(i));
             System.out.println(result.getDisplay());
             Assert.assertTrue(result.getErrorMessage(), !result.isFailed());
         }
+        testIdx = results.size();
     }
 
     @Test

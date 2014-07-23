@@ -41,35 +41,6 @@ NB : Because all the tests are dependent in the `ScimCore` artifact provided by 
      Success: Read ServiceProviderConfig
      Success: Read schema for Users
      Success: Read schema for Groups
-     Success: Read ServiceProviderConfig
-     Success: Read schema for Users
-     Success: Read schema for Groups
-     Success: Create user in json
-     Success: Create user in json
-     Success: Create user in json
-     Success: Create group in json
-     Success: Create user in xml
-     Success: Create user in xml
-     Success: Create user in xml
-     Success: Create group in xml
-     Success: Read ServiceProviderConfig
-     Success: Read schema for Users
-     Success: Read schema for Groups
-     Success: Create user in json
-     Success: Create user in json
-     Success: Create user in json
-     Success: Create group in json
-     Success: Create user in xml
-     Success: Create user in xml
-     Success: Create user in xml
-     Success: Create group in xml
-     Success: PUT User JSON
-     Success: PUT User XML
-     Success: PUT Group JSON
-     Success: PUT Group XML
-     Success: Read ServiceProviderConfig
-     Success: Read schema for Users
-     Success: Read schema for Groups
      Success: Create user in json
      Success: Create user in json
      Success: Create user in json
@@ -100,8 +71,8 @@ NB : Because all the tests are dependent in the `ScimCore` artifact provided by 
      Success: Delete non-existing group
      Ran 31 compliancy tests : 
         31 success 
-        0 skipped 
-        0 failed 
+         0 skipped 
+         0 failed 
 
 
 
