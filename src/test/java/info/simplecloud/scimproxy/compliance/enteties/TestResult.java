@@ -48,7 +48,5 @@ public class TestResult {
         return this.status;
     }
 
-    public String getMessage() {
-        return this.name + " : " + this.statusText  + " (" + this.message + ")";
-    }
+   
 }
