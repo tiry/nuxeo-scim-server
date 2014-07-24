@@ -10,6 +10,7 @@ import info.simplecloud.scimproxy.compliance.test.DeleteTest;
 import info.simplecloud.scimproxy.compliance.test.PostTest;
 import info.simplecloud.scimproxy.compliance.test.PutTest;
 import info.simplecloud.scimproxy.compliance.test.ResourceCache;
+import info.simplecloud.scimproxy.compliance.test.WorkingPostTest;
 
 import java.util.ArrayList;
 
@@ -85,7 +86,7 @@ public class ScimComplianceTest {
 
     @Test
     public void test2Create() throws Exception {
-        results.addAll(new PostTest(csp, userCache, groupCache).run());
+        results.addAll(new WorkingPostTest(csp, userCache, groupCache).run());
         verifyTests();
     }
 
