@@ -51,43 +51,43 @@ public class ScimServerTest {
 
     @Test
     public void shouldListUsers() throws Exception {
-        
+
         final URI uri = URI.create("http://localhost:18090/scim/v1/");
-        
+
         final ClientConfig clientConfig =
             createHttpBasicClientConfig("user0", "user0");
         final SCIMService scimService = new SCIMService(uri, clientConfig);
         scimService.setAcceptType(MediaType.APPLICATION_JSON_TYPE);
-              
+
         // Core user resource CRUD operation example
         final SCIMEndpoint<UserResource> endpoint = scimService.getUserEndpoint();
-        
-        Assert.assertNotNull(endpoint);        
-        
+
+        Assert.assertNotNull(endpoint);
+
         UserResource u = endpoint.get("user0");
-        
+
         Assert.assertEquals("user0", u.getId());
         Assert.assertEquals("Steve", u.getName().getGivenName());
         Assert.assertEquals("Jobs", u.getName().getFamilyName());
         Assert.assertEquals("http://localhost:18090/scim/v1/Users/user0", u.getMeta().getLocation().toString());
-        
+
         List<String> actualGroups = new ArrayList<>();
         for (Entry<String> group : u.getGroups()) {
             actualGroups.add(group.getValue());
-        }        
+        }
         Assert.assertTrue(actualGroups.contains("powerusers"));
         Assert.assertTrue(actualGroups.contains("defgr"));
         Assert.assertEquals(2, actualGroups.size());
-        
+
         Resources<UserResource> users = endpoint.query(null);
         Assert.assertEquals(5, users.getTotalResults());
-        
+
         users = endpoint.query("userName eq user1");
         Assert.assertEquals(1, users.getTotalResults());
-        Assert.assertEquals("user1", users.iterator().next().getId());        
-        
+        Assert.assertEquals("user1", users.iterator().next().getId());
+
     }
-    
+
     protected static ClientConfig createHttpBasicClientConfig(
         final String userName, final String password) {
 
@@ -101,7 +101,7 @@ public class ScimServerTest {
       final SchemeRegistry schemeRegistry = new SchemeRegistry();
       schemeRegistry.register(new Scheme(
               "http", 80, PlainSocketFactory.getSocketFactory()));
-      
+
       final PoolingClientConnectionManager mgr =
               new PoolingClientConnectionManager(schemeRegistry);
       mgr.setMaxTotal(200);
@@ -122,5 +122,5 @@ public class ScimServerTest {
     }
 
 
-    
+
 }

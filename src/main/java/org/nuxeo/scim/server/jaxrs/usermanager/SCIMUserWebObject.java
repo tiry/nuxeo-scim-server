@@ -39,6 +39,7 @@ import javax.ws.rs.core.UriInfo;
 import org.nuxeo.ecm.core.api.ClientException;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.DocumentModelList;
+import org.nuxeo.ecm.directory.DirectoryException;
 import org.nuxeo.ecm.directory.Session;
 import org.nuxeo.ecm.directory.api.DirectoryService;
 import org.nuxeo.ecm.webengine.WebException;
@@ -51,18 +52,19 @@ import com.unboundid.scim.sdk.Resources;
 
 /**
  * Simple Resource class used to expose the SCIM API on Users endpoint
- * 
+ *
  * @author tiry
- * 
+ *
  */
 @WebObject(type = "users")
 @Produces({ MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML })
 public class SCIMUserWebObject extends BaseUMObject {
-    
+
+    @Override
     protected String getPrefix() {
         return "/Users";
     }
-    
+
     protected UserResource resolveUserRessource(String uid) {
 
         try {
@@ -73,8 +75,8 @@ public class SCIMUserWebObject extends BaseUMObject {
         } catch (Exception e) {
             log.error("Error while resolving User", e);
         }
-        
-        
+
+
         return null;
     }
 
@@ -82,13 +84,13 @@ public class SCIMUserWebObject extends BaseUMObject {
     @Produces({ MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML + "; qs=0.9" })
     public Resources<UserResource> getUsers(@Context
             UriInfo uriInfo) {
-        
+
         Map<String, List<String>> params = uriInfo.getQueryParameters();
-        
+
         // filter
-        Map<String, Serializable> filter = new HashMap<>(); 
+        Map<String, Serializable> filter = new HashMap<>();
         List<String> filters = params.get("filter");
-        if (filters!=null && filters.size()>0) {            
+        if (filters!=null && filters.size()>0) {
             String[] filterParts = filters.get(0).split(" ");
             if (filterParts[1].equals("eq")) {
                 String key = filterParts[0];
@@ -100,9 +102,9 @@ public class SCIMUserWebObject extends BaseUMObject {
                     value = value.substring(1,value.length()-2);
                 }
                 filter.put(key, value);
-            }            
+            }
         }
-        
+
         // sort
         List<String> sortCol = params.get("sortBy");
         List<String> sortType = params.get("sortOrder");
@@ -114,7 +116,7 @@ public class SCIMUserWebObject extends BaseUMObject {
                 if (sortType.get(0).equalsIgnoreCase("descending")) {
                     order = "desc";
                 }
-                orderBy.put(sortCol.get(0), order);                
+                orderBy.put(sortCol.get(0), order);
             }
         }
         int startIndex = 1;
@@ -125,31 +127,31 @@ public class SCIMUserWebObject extends BaseUMObject {
         if (params.get("count")!=null) {
             count = Integer.parseInt(params.get("count").get(0));
         }
-        
+
         try {
             String directoryName = um.getUserDirectoryName();
 
             DirectoryService ds = Framework.getLocalService(DirectoryService.class);
-            
+
             Session dSession = null;
             DocumentModelList userModels = null;
             try {
-                dSession= ds.open(directoryName);           
+                dSession= ds.open(directoryName);
                 userModels = dSession.query(filter, null, orderBy, true, count, startIndex-1);
             } finally {
                 dSession.close();
             }
-            
+
             List<UserResource> userResources = new ArrayList<>();
             for (DocumentModel userModel : userModels) {
                 userResources.add(mapper.getUserResourcefromUserModel(userModel));
-            }            
-            return new Resources<>(userResources, userResources.size(), startIndex);                        
+            }
+            return new Resources<>(userResources, userResources.size(), startIndex);
         } catch (Exception e) {
-            log.error("Error while getting Users", e);        }                
+            log.error("Error while getting Users", e);        }
         return null;
     }
-    
+
     @Path("{uid}")
     @GET
     @Produces({ MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON })
@@ -184,7 +186,7 @@ public class SCIMUserWebObject extends BaseUMObject {
     public Response createUser(UserResource user) {
         return doCreateUserResponse(user, fixeMediaType);
     }
-    
+
     protected Response doCreateUserResponse(UserResource user, MediaType mt) {
         try {
             checkUpdateGuardPreconditions();
@@ -194,12 +196,12 @@ public class SCIMUserWebObject extends BaseUMObject {
         }
 
     }
-    
+
     protected UserResource doCreateUser(UserResource user) {
 
         try {
             DocumentModel newUser = mapper.createUserModelFromUserResource(user);
-            UserResource resource =  mapper.getUserResourcefromUserModel(newUser);            
+            UserResource resource =  mapper.getUserResourcefromUserModel(newUser);
             return resource;
         } catch (Exception e) {
             log.error("Unable to create User", e);
@@ -235,7 +237,7 @@ public class SCIMUserWebObject extends BaseUMObject {
         return null;
     }
 
-    
+
     @Path("{uid}")
     @DELETE
     public Response deleteUserResource(@Context
@@ -244,7 +246,7 @@ public class SCIMUserWebObject extends BaseUMObject {
         try {
             um.deleteUser(uid);
             return Response.ok().build();
-        } catch (ClientException e) {            
+        } catch (DirectoryException e) {
             return Response.status(Status.NOT_FOUND).build();
         }
     }

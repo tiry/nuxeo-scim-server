@@ -40,6 +40,7 @@ import javax.ws.rs.core.Response.Status;
 import org.nuxeo.ecm.core.api.ClientException;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.DocumentModelList;
+import org.nuxeo.ecm.directory.DirectoryException;
 import org.nuxeo.ecm.directory.Session;
 import org.nuxeo.ecm.directory.api.DirectoryService;
 import org.nuxeo.ecm.webengine.WebException;
@@ -52,14 +53,15 @@ import com.unboundid.scim.sdk.Resources;
 
 /**
  * Simple Resource class used to expose the SCIM API on Users endpoint
- * 
+ *
  * @author tiry
- * 
+ *
  */
 @WebObject(type = "groups")
 @Produces({ MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML })
 public class SCIMGroupWebObject extends BaseUMObject {
 
+    @Override
     protected String getPrefix() {
         return "/Groups";
     }
@@ -246,7 +248,7 @@ public class SCIMGroupWebObject extends BaseUMObject {
         try {
             um.deleteGroup(uid);
             return Response.ok().build();
-        } catch (ClientException e) {
+        } catch (DirectoryException e) {
             return Response.status(Status.NOT_FOUND).build();
         }
     }

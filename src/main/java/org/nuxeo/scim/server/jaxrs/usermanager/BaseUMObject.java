@@ -22,21 +22,21 @@ public abstract class BaseUMObject extends DefaultObject {
 
     // default to JSON
     protected MediaType fixeMediaType = null;
-    
+
     public BaseUMObject() {
         super();
     }
 
     protected abstract String getPrefix();
-    
+
     @Override
     protected void initialize(Object... args) {
-        um = Framework.getLocalService(UserManager.class);        
+        um = Framework.getLocalService(UserManager.class);
         // build base url
         baseUrl = VirtualHostHelper.getBaseURL(WebEngine.getActiveContext().getRequest());
         while (baseUrl.endsWith("/")) {
-            baseUrl = baseUrl.substring(0, baseUrl.length()-2);
-        }        
+            baseUrl = baseUrl.substring(0, baseUrl.length()-1);
+        }
         baseUrl = baseUrl + WebEngine.getActiveContext().getUrlPath();
         // remove end of url
         int idx = baseUrl.lastIndexOf(getPrefix());
@@ -44,7 +44,7 @@ public abstract class BaseUMObject extends DefaultObject {
             baseUrl = baseUrl.substring(0, idx + getPrefix().length());
         }
         mapper = new UserMapper(baseUrl);
-        
+
         if (args!=null && args.length>0) {
             fixeMediaType = (MediaType) args[0];
         }
@@ -63,7 +63,7 @@ public abstract class BaseUMObject extends DefaultObject {
         if (!principal.isAdministrator()) {
             if ((!principal.isMemberOf("powerusers"))
                     || !isAPowerUserEditableArtifact()) {
-    
+
                 throw new WebSecurityException(
                         "User is not allowed to edit users");
             }
@@ -73,9 +73,9 @@ public abstract class BaseUMObject extends DefaultObject {
     /**
      * Check that the current artifact is editable by a power user. Basically
      * this means not an admin user or not an admin group.
-     * 
+     *
      * @return
-     * 
+     *
      */
     protected boolean isAPowerUserEditableArtifact() {
         return false;
